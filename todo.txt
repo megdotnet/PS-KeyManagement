@@ -1,0 +1,12 @@
+* input handling for bad index
+* test with powershell 5
+* test w/o admin
+* add #requires for anything needed
+* add something for testing AD credentials
+* possibly retrieve AD expiration date for credentials, or last set date
+* start adding revision date to script head
+* add .synopsys, etc
+* add option to update
+* add something to check for updates
+* add binary to metadata for domain credentials
+* add mechanism to update 'metadata schema'
