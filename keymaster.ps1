@@ -224,7 +224,10 @@ function Get-GFSecretPassword {
     $secret_username = $list[$i].Username
 
     $secret_password = (Get-Secret $secret_name).Password
-    Set-Clipboard -Value $($secret_password | ConvertFrom-SecureString -AsPlainText)
+    $secureStringPtr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret_password)
+    $plainText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($secureStringPtr)
+
+    Set-Clipboard -Value $plainText
     Write-Host "`nSecret Name:  $secret_name"
     Write-Host "   Username:  $secret_username"
     Write-Host "Password copied to clipboard.`n"
@@ -299,7 +302,45 @@ function Invoke-GFKeyFixes {
     }
 }
 
+function Test-GEMSecret {
+    param (
+        $list
+    )
 
+    $i = Read-Host -Prompt "Index to Test"
+    $secret_name = $list[$i].'Secret Name'
+    $secret_username = $list[$i].Username
+    $domainName = $secret_username.Split("\")[0]
+    $UserName = $secret_username.Split("\")[1]
+
+    Write-Host "`nSecret Name:  $secret_name"
+    Write-Host "Domain Name:  $domainName"
+    Write-host "  User Name:  $username"
+    $p = Read-Host -Prompt "`nTest these credentials? (y)"
+    
+    if ($p -eq "y") {
+        $secret_password = (Get-Secret $secret_name).Password
+        $secureStringPtr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret_password)
+        $PlainText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($secureStringPtr)
+    
+        Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+        $DS = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('domain')
+        $test_passed = $DS.ValidateCredentials($UserName, $PlainText)
+
+        if ($test_passed) {
+            Write-host "Authentication Seccessful" -ForegroundColor Green
+        }
+        else {
+            Write-Host "Authentication Failed" -ForegroundColor Red
+        }
+        
+        pause
+    }
+    
+    
+
+  
+}
 #
 #####  ENTRY POINT  #####
 #
@@ -319,6 +360,7 @@ if ($diag["AllTestsPassed"]) {
             'u'  { Set-GFSecret $list }
             'd'  { Remove-GFSecret $list }
             'p'  { Get-GFSecretPassword $list }
+            't'  { Test-GEMSecret $list}
             'diag'  { $diag = Test-SecretStore; Show-Diagnostics @diag }
             }
     }
